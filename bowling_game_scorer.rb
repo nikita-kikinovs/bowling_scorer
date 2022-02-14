@@ -1,20 +1,47 @@
 class BowlingGameScorer
+  FRAME_COUNT = 10
+  FRAME_MAX_SCORE = 10
   SCORE_INPUT_REGEX = /\A((10|[0-9]),){10,20}(10|[0-9])\z/
 
-  attr_accessor :input
+  attr_accessor :input, :frame_scores
 
   def initialize(input_score)
     @input = input_score
     process_input
   end
 
-  def calculate_score
+  def print_game_score
+    puts "Frame scores are: #{frame_scores}\nGame score is: #{frame_scores.last}"
+  end
+
+  def frame_scores
+    @frame_scores ||= calculate_frame_scores
   end
 
   private
 
+  def calculate_frame_scores
+    frame_scores = []
+
+    input.each_with_index do |frame, i|
+      if i > 0
+        frame_scores[i - 1] += frame.first if spare?(input[i - 1])
+        frame_scores[i - 1] += frame.first(2).sum if strike?(input[i - 1])
+      end
+
+      if i > 1 && strike?(input[i - 2]) && strike?(input[i - 1])
+        frame_scores[i - 2] += frame.first
+        frame_scores[i - 1] += frame.first
+      end
+
+      frame_scores << (frame_scores[i - 1].to_i + frame.sum)
+    end
+
+    frame_scores
+  end
+
   def process_input
-    print_invalid_input_message unless input.match(SCORE_INPUT_REGEX)
+    print_invalid_input_message unless input&.match(SCORE_INPUT_REGEX)
 
     splitted = input.split(',').map(&:to_i)
     processed = []
@@ -26,15 +53,15 @@ class BowlingGameScorer
         next
       end
 
-      if processed.size == 9
+      if processed.size == FRAME_COUNT - 1
         processed << splitted[i..]
         break
       end
 
       case throw
-        when 10
+        when FRAME_MAX_SCORE
           processed << [throw]
-        when 0..9
+        when 0..FRAME_MAX_SCORE - 1
           processed << [throw, splitted[i + 1]]
           skip_next = true
       end
@@ -47,7 +74,7 @@ class BowlingGameScorer
   end
 
   def valid_frames?
-    input.count == 10 && input[0..8].all? { |frame| frame.sum <= 10 }
+    input.count == FRAME_COUNT && input[0..FRAME_COUNT - 2].all? { |frame| frame.sum <= FRAME_MAX_SCORE }
   end
 
   def valid_last_frame?
@@ -56,7 +83,7 @@ class BowlingGameScorer
   end
 
   def valid_last_frame_two_throws?(frame)
-    frame.size == 2 && frame.sum < 10
+    frame.size == 2 && frame.sum < FRAME_MAX_SCORE
   end
 
   def valid_last_frame_three_throws?(frame)
@@ -64,11 +91,11 @@ class BowlingGameScorer
   end
 
   def strike?(frame)
-    frame.first == 10 && frame.size == 1
+    frame.first == FRAME_MAX_SCORE && frame.size == 1
   end
 
   def spare?(frame)
-    !strike?(frame) && frame.first(2).sum == 10
+    !strike?(frame) && frame.first(2).sum == FRAME_MAX_SCORE
   end
 
   def print_invalid_input_message
@@ -86,4 +113,4 @@ class BowlingGameScorer
 end
 
 # Comment line below when running tests
-BowlingGameScorer.new(ARGV[0]).calculate_score
+BowlingGameScorer.new(ARGV[0]).print_game_score

@@ -2,8 +2,7 @@ require './bowling_game_scorer'
 
 describe BowlingGameScorer do
   describe '#initialize' do
-    subject { BowlingGameScorer.new(score) }
-    let(:score) { input_score }
+    subject { BowlingGameScorer.new(input_score) }
 
     context 'with invalid input data' do
       context 'with invalid frame count' do
@@ -84,6 +83,48 @@ describe BowlingGameScorer do
         it 'should correctly process score' do
           expect(subject.input).to eq([[3, 2], [10], [3, 2], [3, 2], [10], [3, 2], [3, 2], [3, 7], [3, 2], [10, 6, 10]])
         end
+      end
+    end
+  end
+
+  describe '#frame_scores' do
+    subject { BowlingGameScorer.new(input_score).frame_scores }
+
+    around(:each) do |example|
+      example.run
+    rescue SystemExit
+      fail 'invalid input data exit occured'
+    end
+
+    context 'with all strikes' do
+      let(:input_score) { '10,10,10,10,10,10,10,10,10,10,10,10' }
+
+      it 'should correctly calculate frame scores' do
+        expect(subject).to eq([30, 60, 90, 120, 150, 180, 210, 240, 270, 300])
+      end
+    end
+
+    context 'with last frame spare' do
+      let(:input_score) { '3,2,10,3,2,3,2,10,3,2,3,2,3,7,3,2,2,8,5' }
+
+      it 'should correctly calculate frame scores' do
+        expect(subject).to eq([5, 20, 25, 30, 45, 50, 55, 68, 73, 88])
+      end
+    end
+
+    context 'with last open frame' do
+      let(:input_score) { '3,2,10,3,2,5,2,10,3,2,6,2,3,7,3,2,2,3' }
+
+      it 'should correctly calculate frame scores' do
+        expect(subject).to eq([5, 20, 25, 32, 47, 52, 60, 73, 78, 83])
+      end
+    end
+
+    context 'with no hits' do
+      let(:input_score) { '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0' }
+
+      it 'should correctly calculate frame scores' do
+        expect(subject).to eq([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
       end
     end
   end
